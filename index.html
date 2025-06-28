@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כסף הילדים</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 32px;
+            font-size: 1.1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 120px;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .flex {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .flex-col {
+            flex-direction: column;
+        }
+        
+        .justify-center {
+            justify-content: center;
+        }
+        
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .kid-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .kid-avatar {
+            font-size: 3rem;
+            margin-bottom: 8px;
+        }
+        
+        .kid-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        
+        .kid-balance {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin: 12px 0;
+        }
+        
+        .error {
+            color: #ef4444;
+            text-align: center;
+            margin: 16px 0;
+            font-weight: 600;
+        }
+        
+        .success {
+            color: #10b981;
+            text-align: center;
+            margin: 16px 0;
+            font-weight: 600;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .avatar-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 16px 0;
+        }
+        
+        .avatar-option {
+            font-size: 2rem;
+            padding: 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .avatar-option.selected {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 0;
+            margin-bottom: 20px;
+        }
+        
+        .kids-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- כאן יטען התוכן -->
+        <div class="container">
+            <div class="card text-center">
+                <h1>כסף הילדים</h1>
+                <div style="font-size: 4rem; margin: 20px 0;">⏳</div>
+                <p style="color: #6b7280;">טוען אפליקציה...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // נתונים
+        let currentUser = null;
+        let users = [];
+        let kids = [];
+        let transactions = [];
+        let isRegistered = false;
+
+        // טעינת נתונים
+        function loadData() {
+            try {
+                const data = localStorage.getItem('kidsMoneyApp');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    users = parsed.users || [];
+                    kids = parsed.kids || [];
+                    transactions = parsed.transactions || [];
+                    isRegistered = true;
+                }
+            } catch (e) {
+                console.log('Error loading data:', e);
+            }
+        }
+
+        // שמירת נתונים
+        function saveData() {
+            try {
+                const data = {
+                    users,
+                    kids,
+                    transactions,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('kidsMoneyApp', JSON.stringify(data));
+            } catch (e) {
+                console.log('Error saving data:', e);
+            }
+        }
+
+        // חישוב גיל
+        function calculateAge(birthDate) {
+            if (!birthDate) return 0;
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        // מסך הרשמה
+        function renderRegisterScreen() {
+            return `
+                <div class="container">
+                    <div class="card">
+                        <h1>כסף הילדים</h1>
+                        <p class="subtitle">הגדרת המשפחה</p>
+                        
+                        <div class="form-group">
+                            <label>שם משפחה/הורה</label>
+                            <input type="text" id="name" placeholder="הזן שם משפחה או הורה ראשי">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>כתובת מייל (לזיהוי בלבד)</label>
+                            <input type="email" id="email" placeholder="example@email.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>סיסמת מנהל (4 ספרות)</label>
+                            <input type="password" id="password" placeholder="****" maxlength="4">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>אימות סיסמה</label>
+                            <input type="password" id="confirmPassword" placeholder="****" maxlength="4">
+                        </div>
+                        
+                        <div id="error" class="error hidden"></div>
+                        
+                        <div class="text-center">
+                            <button class="btn-primary" onclick="handleRegister()">התחל להשתמש</button>
+                        </div>
+                        
+                        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                            <p style="text-align: center; color: #6b7280; font-size: 0.9rem;">
+                                💾 הנתונים נשמרים מקומית על המכשיר הזה<br>
+                                📱 ניתן להוסיף למסך הבית לגישה מהירה
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // מסך כניסה
+        function renderLoginScreen() {
+            const parentUsers = users.filter(user => user.type === 'parent' || user.type === 'admin');
+            
+            return `
+                <div class="container">
+                    <div class="card">
+                        <h1>כסף הילדים</h1>
+                        
+                        <h2 style="margin: 24px 0 16px; color: #374151;">הורים</h2>
+                        <div style="margin-bottom: 32px;">
+                            ${parentUsers.map(user => `
+                                <button class="btn-primary" style="width: 100%; margin-bottom: 12px;" 
+                                        onclick="loginUser('${user.id}')">
+                                    👤 ${user.name} ${user.type === 'admin' ? '(מנהל)' : ''}
+                                </button>
+                            `).join('')}
+                        </div>
+
+                        <h2 style="margin: 24px 0 16px; color: #374151;">ילדים</h2>
+                        ${kids.length === 0 ? `
+                            <div style="background: #f9fafb; padding: 32px; border-radius: 12px; text-align: center;">
+                                <p style="color: #6b7280; margin-bottom: 16px;">עדיין לא הוספת ילדים למערכת</p>
+                                <p style="color: #9ca3af; font-size: 0.9rem;">היכנס כמנהל כדי להוסיף ילד/ה</p>
+                            </div>
+                        ` : `
+                            <div>
+                                ${kids.map(kid => `
+                                    <div class="kid-card">
+                                        <div class="flex justify-between">
+                                            <button class="btn-success" onclick="quickTransaction('${kid.id}', 'add')">+</button>
+                                            <div class="text-center" style="cursor: pointer;" onclick="loginAsKid('${kid.id}')">
+                                                <div style="font-size: 2rem;">${kid.avatar}</div>
+                                                <div style="font-weight: bold; font-size: 1.2rem;">${kid.name}</div>
+                                                <div style="color: #3b82f6; font-weight: bold;">₪${kid.balance}</div>
+                                                <div style="color: #6b7280; font-size: 0.9rem;">גיל ${calculateAge(kid.birthDate)}</div>
+                                            </div>
+                                            <button class="btn-danger" onclick="quickTransaction('${kid.id}', 'subtract')">-</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                        
+                        <div style="background: #dbeafe; padding: 16px; border-radius: 8px; margin-top: 24px;">
+                            <h3 style="color: #1e40af; margin-bottom: 8px;">איך להשתמש:</h3>
+                            <ul style="color: #1e3a8a; font-size: 0.9rem; margin-right: 20px;">
+                                <li>🔵 <strong>הורים/מנהל:</strong> לחצו על השם שלכם</li>
+                                <li>🟢 <strong>כפתור +:</strong> הוספת כסף מהירה</li>
+                                <li>🔴 <strong>כפתור -:</strong> הורדת כסף מהירה</li>
+                                <li>👦 <strong>ילדים:</strong> לחצו על השם שלכם כדי להיכנס</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // מסך ראשי
+        function renderMainScreen() {
+            const isAdmin = currentUser.type === 'admin' || currentUser.type === 'parent';
+            
+            return `
+                <div>
+                    <div class="header">
+                        <div class="container">
+                            <div class="flex justify-between">
+                                <h1 style="margin: 0; font-size: 1.8rem;">כסף הילדים</h1>
+                                <div class="flex">
+                                    <span style="margin-left: 16px; color: #6b7280;">
+                                        שלום, ${currentUser.name} ${currentUser.type === 'admin' ? '(מנהל)' : ''}
+                                    </span>
+                                    ${isAdmin ? '<button class="btn-success" onclick="showAddKidModal()">הוסף ילד/ה</button>' : ''}
+                                    <button class="btn-secondary" onclick="logout()">יציאה</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="container">
+                        ${kids.length === 0 ? `
+                            <div class="card text-center">
+                                <p style="color: #6b7280; font-size: 1.2rem; margin-bottom: 24px;">אין ילדים במערכת עדיין</p>
+                                ${isAdmin ? '<button class="btn-primary" onclick="showAddKidModal()">הוסף ילד/ה ראשון/ה</button>' : ''}
+                            </div>
+                        ` : `
+                            <div class="kids-grid">
+                                ${kids.map(kid => `
+                                    <div class="card">
+                                        <div class="text-center">
+                                            <div class="kid-avatar">${kid.avatar}</div>
+                                            <div class="kid-name">${kid.name}</div>
+                                            <div style="color: #6b7280;">גיל ${calculateAge(kid.birthDate)}</div>
+                                            <div style="color: #9ca3af; font-size: 0.8rem;">
+                                                ${new Date(kid.birthDate).toLocaleDateString('he-IL')}
+                                            </div>
+                                            <div class="kid-balance">₪${kid.balance}</div>
+                                            <p style="color: #6b7280; margin-bottom: 20px;">יתרה נוכחית</p>
+                                            
+                                            <div class="flex justify-center" style="gap: 12px;">
+                                                <button class="btn-success" onclick="showTransactionModal('${kid.id}', 'add')">הוסף כסף</button>
+                                                <button class="btn-danger" onclick="showTransactionModal('${kid.id}', 'subtract')">הורד כסף</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        // פונקציות
+        function handleRegister() {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorDiv = document.getElementById('error');
+
+            errorDiv.classList.add('hidden');
+
+            if (!name || !email || !password || !confirmPassword) {
+                showError('יש למלא את כל השדות');
+                return;
+            }
+
+            if (!email.includes('@')) {
+                showError('כתובת מייל לא תקינה');
+                return;
+            }
+
+            if (password.length !== 4) {
+                showError('הסיסמה חייבת להיות בת 4 ספרות');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError('הסיסמאות אינן זהות');
+                return;
+            }
+
+            const adminUser = {
+                id: 'admin-1',
+                name: name,
+                email: email,
+                type: 'admin',
+                password: password,
+                createdAt: new Date().toISOString()
+            };
+
+            users = [adminUser];
+            isRegistered = true;
+            saveData();
+            render();
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function loginUser(userId) {
+            const user = users.find(u => u.id == userId);
+            if (user) {
+                currentUser = user;
+                render();
+            }
+        }
+
+        function loginAsKid(kidId) {
+            const kidUser = users.find(u => u.kidId == kidId);
+            if (kidUser) {
+                currentUser = kidUser;
+                render();
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            render();
+        }
+
+        function quickTransaction(kidId, type) {
+            const amount = prompt(type === 'add' ? 'כמה כסף להוסיף?' : 'כמה כסף להוריד?');
+            const description = prompt('מה הסיבה?');
+            
+            if (amount && description && !isNaN(amount) && parseFloat(amount) > 0) {
+                const kid = kids.find(k => k.id == kidId);
+                if (kid) {
+                    const finalAmount = type === 'add' ? parseFloat(amount) : -parseFloat(amount);
+                    kid.balance += finalAmount;
+                    
+                    transactions.push({
+                        id: Date.now(),
+                        kidId: kidId,
+                        amount: finalAmount,
+                        description: description,
+                        date: new Date().toISOString(),
+                        performedBy: 'מהיר',
+                        balanceAfter: kid.balance
+                    });
+                    
+                    saveData();
+                    render();
+                }
+            }
+        }
+
+        function showAddKidModal() {
+            document.body.insertAdjacentHTML('beforeend', `
+                <div class="modal" id="addKidModal">
+                    <div class="modal-content">
+                        <h2 style="margin-bottom: 24px; text-align: center;">הוספת ילד/ה חדש/ה</h2>
+                        
+                        <div class="form-group">
+                            <label>שם</label>
+                            <input type="text" id="kidName" placeholder="הזן שם הילד/ה">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>תאריך לידה</label>
+                            <input type="date" id="kidBirthDate">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>אווטר</label>
+                            <div class="avatar-selector">
+                                <div class="avatar-option selected" data-avatar="🐶">🐶</div>
+                                <div class="avatar-option" data-avatar="🐱">🐱</div>
+                                <div class="avatar-option" data-avatar="🐰">🐰</div>
+                                <div class="avatar-option" data-avatar="🐸">🐸</div>
+                                <div class="avatar-option" data-avatar="🐧">🐧</div>
+                                <div class="avatar-option" data-avatar="🦊">🦊</div>
+                                <div class="avatar-option" data-avatar="🐨">🐨</div>
+                                <div class="avatar-option" data-avatar="🐯">🐯</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-center" style="gap: 12px;">
+                            <button class="btn-success" onclick="saveKid()">שמור</button>
+                            <button class="btn-secondary" onclick="closeModal('addKidModal')">ביטול</button>
+                        </div>
+                    </div>
+                </div>
+            `);
+
+            // אווטר סלקטור
+            document.querySelectorAll('.avatar-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+        }
+
+        function saveKid() {
+            const name = document.getElementById('kidName').value.trim();
+            const birthDate = document.getElementById('kidBirthDate').value;
+            const selectedAvatar = document.querySelector('.avatar-option.selected').dataset.avatar;
+
+            if (!name || !birthDate) {
+                alert('יש למלא שם ותאריך לידה');
+                return;
+            }
+
+            const kidId = 'kid-' + Date.now();
+            const kid = {
+                id: kidId,
+                name: name,
+                birthDate: birthDate,
+                balance: 0,
+                avatar: selectedAvatar
+            };
+
+            const kidUser = {
+                id: 'user-' + Date.now(),
+                name: name,
+                type: 'child',
+                kidId: kidId
+            };
+
+            kids.push(kid);
+            users.push(kidUser);
+            saveData();
+            closeModal('addKidModal');
+            render();
+        }
+
+        function showTransactionModal(kidId, type) {
+            const kid = kids.find(k => k.id === kidId);
+            if (!kid) return;
+
+            document.body.insertAdjacentHTML('beforeend', `
+                <div class="modal" id="transactionModal">
+                    <div class="modal-content">
+                        <h2 style="margin-bottom: 24px; text-align: center;">
+                            ${type === 'add' ? 'הוספת כסף' : 'הורדת כסף'} - ${kid.name}
+                        </h2>
+                        
+                        <div class="form-group">
+                            <label>סכום (₪)</label>
+                            <input type="number" id="transAmount" placeholder="הזן סכום" min="0" step="0.01">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>פירוט (חובה)</label>
+                            <textarea id="transDescription" placeholder="מה בדיוק קרה? איפה? עם מי?" rows="3"></textarea>
+                        </div>
+                        
+                        <div style="background: #f9fafb; padding: 12px; border-radius: 8px; margin: 16px 0; font-size: 0.9rem; color: #374151;">
+                            יתרה נוכחית: ₪${kid.balance}<br>
+                            יתרה לאחר הפעולה: ₪<span id="newBalance">${kid.balance}</span>
+                        </div>
+                        
+                        <div class="flex justify-center" style="gap: 12px;">
+                            <button class="btn-${type === 'add' ? 'success' : 'danger'}" onclick="saveTransaction('${kidId}', '${type}')">
+                                ${type === 'add' ? 'הוסף' : 'הורד'}
+                            </button>
+                            <button class="btn-secondary" onclick="closeModal('transactionModal')">ביטול</button>
+                        </div>
+                    </div>
+                </div>
+            `);
+
+            // עדכון יתרה בזמן אמת
+            document.getElementById('transAmount').addEventListener('input', function() {
+                const amount = parseFloat(this.value) || 0;
+                const newBalance = type === 'add' ? kid.balance + amount : kid.balance - amount;
+                document.getElementById('newBalance').textContent = newBalance;
+            });
+        }
+
+        function saveTransaction(kidId, type) {
+            const amount = parseFloat(document.getElementById('transAmount').value);
+            const description = document.getElementById('transDescription').value.trim();
+
+            if (!amount || amount <= 0) {
+                alert('יש להזין סכום תקין');
+                return;
+            }
+
+            if (!description) {
+                alert('יש להזין פירוט');
+                return;
+            }
+
+            const kid = kids.find(k => k.id === kidId);
+            if (!kid) return;
+
+            const finalAmount = type === 'add' ? amount : -amount;
+            kid.balance += finalAmount;
+
+            transactions.push({
+                id: Date.now(),
+                kidId: kidId,
+                amount: finalAmount,
+                description: description,
+                date: new Date().toISOString(),
+                performedBy: currentUser.name,
+                balanceAfter: kid.balance
+            });
+
+            saveData();
+            closeModal('transactionModal');
+            render();
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // רינדור ראשי
+        function render() {
+            let html = '';
+
+            if (!isRegistered) {
+                html = renderRegisterScreen();
+            } else if (!currentUser) {
+                html = renderLoginScreen();
+            } else {
+                html = renderMainScreen();
+            }
+
+            document.getElementById('app').innerHTML = html;
+        }
+
+        // התחלה
+        loadData();
+        render();
+    </script>
+</body>
+</html>
