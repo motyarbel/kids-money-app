@@ -1,0 +1,1263 @@
+</script>
+</body>
+</html>                                    disabled={password.length !== 4}
+                                    >
+                                        כניסה
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowPasswordPrompt(false);
+                                            setSelectedParent(null);
+                                            setPassword('');
+                                            setError('');
+                                        }}
+                                        className="flex-1 bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                                    >
+                                        ביטול
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Transaction Modal
+            const TransactionModal = () => {
+                const [amount, setAmount] = useState('');
+                const [description, setDescription] = useState('');
+
+                const handleSubmit = () => {
+                    if (amount && description.trim() && selectedKid) {
+                        const amountNum = parseFloat(amount);
+                        const finalAmount = transactionType === 'subtract' ? -amountNum : amountNum;
+                        const newBalance = selectedKid.balance + finalAmount;
+
+                        const transaction = {
+                            id: Date.now(),
+                            kidId: selectedKid.id,
+                            date: new Date(),
+                            amount: finalAmount,
+                            description: description.trim(),
+                            performedBy: currentUser.name,
+                            balanceAfter: newBalance
+                        };
+
+                        setTransactions([...transactions, transaction]);
+                        setKids(kids.map(kid => 
+                            kid.id === selectedKid.id 
+                                ? { ...kid, balance: newBalance }
+                                : kid
+                        ));
+
+                        setAmount('');
+                        setDescription('');
+                        setShowTransaction(false);
+                        setSelectedKid(null);
+                    }
+                };
+
+                return (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+                            <h2 className="text-2xl font-bold mb-4 text-center">
+                                {transactionType === 'add' ? 'הוספת כסף' : 'הורדת כסף'} - {selectedKid?.name}
+                            </h2>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">סכום (₪)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        className="w-full p-2 border rounded-lg text-lg"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">פירוט (חובה)</label>
+                                    <textarea
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                        className="w-full p-2 border rounded-lg h-20"
+                                        placeholder="מה בדיוק קרה? איפה? עם מי?"
+                                        required
+                                    />
+                                </div>
+                                <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                                    יתרה נוכחית: ₪{selectedKid?.balance}<br/>
+                                    יתרה לאחר הפעולה: ₪{selectedKid?.balance + (transactionType === 'add' ? parseFloat(amount || 0) : -parseFloat(amount || 0))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleSubmit}
+                                        className={`flex-1 text-white p-2 rounded-lg ${
+                                            transactionType === 'add' 
+                                                ? 'bg-green-500 hover:bg-green-600' 
+                                                : 'bg-red-500 hover:bg-red-600'
+                                        }`}
+                                    >
+                                        {transactionType === 'add' ? 'הוסף' : 'הורד'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowTransaction(false);
+                                            setSelectedKid(null);
+                                        }}
+                                        className="flex-1 bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                                    >
+                                        ביטול
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // History Modal
+            const HistoryModal = () => {
+                const kidTransactions = transactions
+                    .filter(t => t.kidId === selectedKid?.id)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                return (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+                            <h2 className="text-2xl font-bold mb-4 text-center">היסטוריה - {selectedKid?.name}</h2>
+                            <div className="flex-1 overflow-y-auto">
+                                {kidTransactions.length === 0 ? (
+                                    <p className="text-center text-gray-500 py-8">אין תנועות עדיין</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {kidTransactions.map(transaction => (
+                                            <div key={transaction.id} className="bg-gray-50 p-4 rounded-lg relative">
+                                                {(currentUser.type === 'parent' || currentUser.type === 'admin') && (
+                                                    <button
+                                                        onClick={() => setTransactionToDelete(transaction.id)}
+                                                        className="absolute top-2 left-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded-full transition-colors z-10"
+                                                        title="מחק תנועה"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                )}
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className={`text-lg font-bold ${
+                                                        transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                                                    }`}>
+                                                        {transaction.amount > 0 ? '+' : ''}₪{transaction.amount}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500">
+                                                        {new Date(transaction.date).toLocaleDateString('he-IL')}
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-700 mb-1">{transaction.description}</p>
+                                                <div className="flex justify-between text-xs text-gray-500">
+                                                    <span>בוצע על ידי: {transaction.performedBy}</span>
+                                                    <span>יתרה לאחר: ₪{transaction.balanceAfter}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowHistory(false);
+                                    setSelectedKid(null);
+                                }}
+                                className="mt-4 w-full bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                            >
+                                סגור
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Login Screen
+            const LoginScreen = () => (
+                <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-2xl">
+                        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">כסף הילדים</h1>
+                        
+                        <div className="mb-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-gray-700">הורים</h2>
+                                {currentUser?.type === 'admin' && (
+                                    <button
+                                        onClick={() => setShowAddParent(true)}
+                                        className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-1"
+                                    >
+                                        <Plus size={14} />
+                                        הוסף הורה
+                                    </button>
+                                )}
+                            </div>
+                            <div className="space-y-3">
+                                {users.filter(user => user.type === 'parent' || user.type === 'admin').map(user => (
+                                    <button
+                                        key={user.id}
+                                        onClick={() => {
+                                            setSelectedParent(user);
+                                            setShowPasswordPrompt(true);
+                                        }}
+                                        className="w-full p-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                                    >
+                                        <User size={20} />
+                                        {user.name}
+                                        {user.type === 'admin' && ' (מנהל)'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-gray-700">ילדים</h2>
+                                <p className="text-xs text-gray-500">לחץ על השם להיכנס כילד/ה</p>
+                            </div>
+                            {kids.length === 0 ? (
+                                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                                    <p className="text-gray-500 mb-4">עדיין לא הוספת ילדים למערכת</p>
+                                    <p className="text-sm text-gray-400">היכנס כמנהל כדי להוסיף ילד/ה</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {kids.map(kid => (
+                                        <div key={kid.id} className="bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+                                            <button
+                                                onClick={() => {
+                                                    const kidUser = users.find(u => u.kidId === kid.id);
+                                                    if (kidUser) {
+                                                        setSelectedKid(kid);
+                                                        setTransactionType('add');
+                                                        setCurrentUser(kidUser);
+                                                        setShowTransaction(true);
+                                                    }
+                                                }}
+                                                className="flex-1 text-center py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors mx-2"
+                                                title="הוסף כסף"
+                                            >
+                                                +
+                                            </button>
+                                            
+                                            <div 
+                                                onClick={() => {
+                                                    const kidUser = users.find(u => u.kidId === kid.id);
+                                                    if (kidUser) {
+                                                        setCurrentUser(kidUser);
+                                                    }
+                                                }}
+                                                className="flex-2 text-center cursor-pointer hover:bg-gray-100 rounded p-2 transition-colors"
+                                                title="היכנס כילד/ה"
+                                            >
+                                                <div className="font-bold text-lg text-gray-800">{kid.name}</div>
+                                                <div className="text-blue-600 font-semibold">₪{kid.balance}</div>
+                                                <div className="text-xs text-gray-500">גיל {calculateAge(kid.birthDate)}</div>
+                                            </div>
+                                            
+                                            <button
+                                                onClick={() => {
+                                                    const kidUser = users.find(u => u.kidId === kid.id);
+                                                    if (kidUser) {
+                                                        setSelectedKid(kid);
+                                                        setTransactionType('subtract');
+                                                        setCurrentUser(kidUser);
+                                                        setShowTransaction(true);
+                                                    }
+                                                }}
+                                                className="flex-1 text-center py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors mx-2"
+                                                title="הורד כסף"
+                                            >
+                                                -
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                            <h3 className="font-semibold text-blue-800 mb-2">איך להשתמש:</h3>
+                            <ul className="text-sm text-blue-700 space-y-1">
+                                <li>🔵 <strong>הורים/מנהל:</strong> לחצו על השם שלכם והזינו סיסמה</li>
+                                <li>🟢 <strong>כפתור +:</strong> הוספת כסף מהירה</li>
+                                <li>🔴 <strong>כפתור -:</strong> הורדת כסף מהירה</li>
+                                <li>👦 <strong>ילדים:</strong> לחצו על השם שלכם כדי להיכנס</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Main App
+            const MainApp = () => (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+                    <div className="bg-white shadow-sm border-b">
+                        <div className="max-w-6xl mx-auto px-4 py-4">
+                            <div className="flex justify-between items-center">
+                                <h1 className="text-2xl font-bold text-gray-800">כסף הילדים</h1>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-gray-600">שלום, {currentUser.name}</span>
+                                        {currentUser.type === 'admin' && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">מנהל</span>}
+                                        {(currentUser.type === 'parent' || currentUser.type === 'admin') && (
+                                            <button
+                                                onClick={() => setShowEditParent(true)}
+                                                className="text-blue-500 hover:text-blue-700 p-1 rounded transition-colors"
+                                                title="ערוך פרטים"
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {currentUser.type === 'admin' && (
+                                        <button
+                                            onClick={() => setShowAddParent(true)}
+                                            className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+                                        >
+                                            <User size={16} />
+                                            הוסף הורה
+                                        </button>
+                                    )}
+                                    {(currentUser.type === 'parent' || currentUser.type === 'admin') && (
+                                        <button
+                                            onClick={() => setShowAddKid(true)}
+                                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                                        >
+                                            <Plus size={16} />
+                                            הוסף ילד/ה
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setCurrentUser(null)}
+                                        className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+                                    >
+                                        <LogOut size={16} />
+                                        יציאה
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-6xl mx-auto px-4 py-8">
+                        {kids.length === 0 ? (
+                            <div className="text-center py-12">
+                                <p className="text-gray-500 text-lg mb-4">אין ילדים במערכת עדיין</p>
+                                {(currentUser.type === 'parent' || currentUser.type === 'admin') && (
+                                    <button
+                                        onClick={() => setShowAddKid(true)}
+                                        className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                                    >
+                                        הוסף ילד/ה ראשון/ה
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {kids.map(kid => (
+                                    <div key={kid.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow relative">
+                                        {(currentUser.type === 'parent' || currentUser.type === 'admin') && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setKidToDelete(kid);
+                                                    setShowDeleteConfirm(true);
+                                                }}
+                                                className="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors z-10"
+                                                title="מחק ילד/ה"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+                                        
+                                        <div className="text-center mb-4">
+                                            <div className="text-4xl mb-2">{kid.avatar}</div>
+                                            <h3 className="text-xl font-bold text-gray-800">{kid.name}</h3>
+                                            <p className="text-gray-600">גיל {calculateAge(kid.birthDate)}</p>
+                                            <p className="text-xs text-gray-400">
+                                                {new Date(kid.birthDate).toLocaleDateString('he-IL')}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="text-center mb-6">
+                                            <div className="text-3xl font-bold text-blue-600 mb-1">₪{kid.balance}</div>
+                                            <p className="text-gray-500">יתרה נוכחית</p>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-2 mb-3">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedKid(kid);
+                                                    setShowSavingsGoals(true);
+                                                }}
+                                                className="flex items-center justify-center gap-1 bg-yellow-500 text-white p-2 rounded-lg hover:bg-yellow-600 transition-colors text-sm"
+                                            >
+                                                🎯 מטרות
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedKid(kid);
+                                                    setShowHistory(true);
+                                                }}
+                                                className="flex items-center justify-center gap-1 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                            >
+                                                <History size={16} />
+                                                היסטוריה
+                                            </button>
+                                        </div>
+
+                                        {((currentUser.type === 'parent' || currentUser.type === 'admin') || 
+                                         (currentUser.type === 'child' && currentUser.kidId === kid.id)) && (
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedKid(kid);
+                                                        setTransactionType('add');
+                                                        setShowTransaction(true);
+                                                    }}
+                                                    className="flex items-center justify-center gap-1 bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 transition-colors"
+                                                >
+                                                    <Plus size={16} />
+                                                    הוסף
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedKid(kid);
+                                                        setTransactionType('subtract');
+                                                        setShowTransaction(true);
+                                                    }}
+                                                    className="flex items-center justify-center gap-1 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
+                                                >
+                                                    <Minus size={16} />
+                                                    הורד
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Modals */}
+                    {showSavingsGoals && <SavingsGoalsModal />}
+                    {showAddGoal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+                                <h2 className="text-2xl font-bold mb-4 text-center">מטרה חדשה - {selectedKid?.name}</h2>
+                                <AddGoalForm />
+                            </div>
+                        </div>
+                    )}
+                    {showAddParent && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+                                <h2 className="text-2xl font-bold mb-4 text-center">הוספת הורה חדש</h2>
+                                <AddParentForm />
+                            </div>
+                        </div>
+                    )}
+                    {showAddKid && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+                                <h2 className="text-2xl font-bold mb-4 text-center">הוספת ילד/ה חדש/ה</h2>
+                                <AddKidForm />
+                            </div>
+                        </div>
+                    )}
+                    {showTransaction && <TransactionModal />}
+                    {showHistory && <HistoryModal />}
+                    
+                    {/* Delete confirmations */}
+                    {showDeleteConfirm && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+                                <h2 className="text-2xl font-bold mb-4 text-center text-red-600">מחיקת ילד/ה</h2>
+                                <div className="text-center mb-6">
+                                    <div className="text-4xl mb-2">{kidToDelete?.avatar}</div>
+                                    <p className="text-lg mb-2">האם אתה בטוח שברצונך למחוק את {kidToDelete?.name}?</p>
+                                    <p className="text-sm text-gray-600 mb-2">יתרה נוכחית: ₪{kidToDelete?.balance}</p>
+                                    <p className="text-xs text-red-500">
+                                        ⚠️ פעולה זו תמחק את כל ההיסטוריה של הילד/ה ולא ניתן לבטלה!
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const kidId = kidToDelete.id;
+                                            setKids(prev => prev.filter(kid => kid.id !== kidId));
+                                            setUsers(prev => prev.filter(user => user.kidId !== kidId));
+                                            setTransactions(prev => prev.filter(t => t.kidId !== kidId));
+                                            setSavingsGoals(prev => prev.filter(g => g.kidId !== kidId));
+                                            setShowDeleteConfirm(false);
+                                            setKidToDelete(null);
+                                        }}
+                                        className="flex-1 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600"
+                                    >
+                                        כן, מחק
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowDeleteConfirm(false);
+                                            setKidToDelete(null);
+                                        }}
+                                        className="flex-1 bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                                    >
+                                        ביטול
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {transactionToDelete && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                                <h2 className="text-xl font-bold mb-4 text-center text-red-600">מחיקת תנועה</h2>
+                                <p className="text-center mb-4">האם אתה בטוח שברצונך למחוק את התנועה?</p>
+                                <p className="text-xs text-red-500 text-center mb-4">
+                                    ⚠️ פעולה זו תשנה את היתרה הנוכחית של הילד!
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const transactionId = transactionToDelete;
+                                            const transaction = transactions.find(t => t.id === transactionId);
+                                            if (transaction) {
+                                                setKids(prev => prev.map(kid => 
+                                                    kid.id === transaction.kidId 
+                                                        ? { ...kid, balance: kid.balance - transaction.amount }
+                                                        : kid
+                                                ));
+                                                setTransactions(prev => prev.filter(t => t.id !== transactionId));
+                                            }
+                                            setTransactionToDelete(null);
+                                        }}
+                                        className="flex-1 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600"
+                                    >
+                                        כן, מחק
+                                    </button>
+                                    <button
+                                        onClick={() => setTransactionToDelete(null)}
+                                        className="flex-1 bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                                    >
+                                        ביטול
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+
+            // Main render
+            if (!isRegistered) {
+                return <RegisterScreen />;
+            }
+
+            if (!currentUser) {
+                return (
+                    <>
+                        <LoginScreen />
+                        {showPasswordPrompt && <PasswordPrompt />}
+                        {showAddParent && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+                                    <h2 className="text-2xl font-bold mb-4 text-center">הוספת הורה חדש</h2>
+                                    <AddParentForm />
+                                </div>
+                            </div>
+                        )}
+                    </>
+                );
+            }
+
+            return <MainApp />;
+        };
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registered');
+                    })
+                    .catch(function(error) {
+                        console.log('ServiceWorker registration failed');
+                    });
+            });
+        }
+
+        ReactDOM.render(<KidsMoneyApp />, document.getElementById('root'));
+    <!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="כסף הילדים">
+    <meta name="theme-color" content="#3B82F6">
+    <title>כסף הילדים</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .rtl { direction: rtl; text-align: right; }
+    </style>
+</head>
+<body class="rtl">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Plus, Minus, History, User, LogOut, Edit, Trash2 } = lucide;
+
+        const KidsMoneyApp = () => {
+            // State management
+            const [currentUser, setCurrentUser] = useState(null);
+            const [users, setUsers] = useState([]);
+            const [kids, setKids] = useState([]);
+            const [transactions, setTransactions] = useState([]);
+            const [showAddKid, setShowAddKid] = useState(false);
+            const [showTransaction, setShowTransaction] = useState(false);
+            const [selectedKid, setSelectedKid] = useState(null);
+            const [transactionType, setTransactionType] = useState('add');
+            const [showHistory, setShowHistory] = useState(false);
+            const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+            const [kidToDelete, setKidToDelete] = useState(null);
+            const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+            const [selectedParent, setSelectedParent] = useState(null);
+            const [showEditParent, setShowEditParent] = useState(false);
+            const [transactionToDelete, setTransactionToDelete] = useState(null);
+            const [isRegistered, setIsRegistered] = useState(false);
+            const [showAddParent, setShowAddParent] = useState(false);
+            const [showSavingsGoals, setShowSavingsGoals] = useState(false);
+            const [savingsGoals, setSavingsGoals] = useState([]);
+            const [showAddGoal, setShowAddGoal] = useState(false);
+
+            // Initialize data
+            useEffect(() => {
+                const storedData = localStorage.getItem('kidsMoneyApp');
+                if (storedData) {
+                    try {
+                        const data = JSON.parse(storedData);
+                        setUsers(data.users || []);
+                        setKids(data.kids || []);
+                        setTransactions(data.transactions || []);
+                        setSavingsGoals(data.savingsGoals || []);
+                        setIsRegistered(true);
+                    } catch (e) {
+                        setIsRegistered(false);
+                    }
+                } else {
+                    setIsRegistered(false);
+                }
+            }, []);
+
+            // Save data
+            useEffect(() => {
+                if (isRegistered && (users.length > 0 || kids.length > 0 || transactions.length > 0)) {
+                    const dataToSave = {
+                        users,
+                        kids, 
+                        transactions,
+                        savingsGoals,
+                        lastUpdated: new Date().toISOString()
+                    };
+                    localStorage.setItem('kidsMoneyApp', JSON.stringify(dataToSave));
+                }
+            }, [users, kids, transactions, isRegistered, savingsGoals]);
+
+            // Calculate age
+            const calculateAge = (birthDate) => {
+                if (!birthDate) return 0;
+                const today = new Date();
+                const birth = new Date(birthDate);
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+                return age;
+            };
+
+            // Registration Screen
+            const RegisterScreen = () => {
+                const [email, setEmail] = useState('');
+                const [password, setPassword] = useState('');
+                const [confirmPassword, setConfirmPassword] = useState('');
+                const [name, setName] = useState('');
+                const [error, setError] = useState('');
+
+                const handleRegister = () => {
+                    setError('');
+                    
+                    if (!email || !password || !confirmPassword || !name) {
+                        setError('יש למלא את כל השדות');
+                        return;
+                    }
+                    
+                    if (!email.includes('@')) {
+                        setError('כתובת מייל לא תקינה');
+                        return;
+                    }
+                    
+                    if (password.length !== 4) {
+                        setError('הסיסמה חייבת להיות בת 4 ספרות');
+                        return;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        setError('הסיסמאות אינן זהות');
+                        return;
+                    }
+
+                    const adminUser = {
+                        id: 1,
+                        name: name.trim(),
+                        email: email.trim(),
+                        type: 'admin',
+                        password: password,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    setUsers([adminUser]);
+                    setIsRegistered(true);
+                    setCurrentUser(adminUser);
+                };
+
+                const handleResetApp = () => {
+                    if (window.confirm('האם אתה בטוח שברצונך לאפס את האפליקציה? כל הנתונים יימחקו!')) {
+                        localStorage.removeItem('kidsMoneyApp');
+                        setUsers([]);
+                        setKids([]);
+                        setTransactions([]);
+                        setSavingsGoals([]);
+                        setIsRegistered(false);
+                        setCurrentUser(null);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+                            <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">כסף הילדים</h1>
+                            <p className="text-center text-gray-600 mb-8">הגדרת המשפחה</p>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">שם משפחה/הורה</label>
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="w-full p-3 border rounded-lg"
+                                        placeholder="הזן שם משפחה או הורה ראשי"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">כתובת מייל (לזיהוי בלבד)</label>
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="w-full p-3 border rounded-lg"
+                                        placeholder="example@email.com"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">סיסמת מנהל (4 ספרות)</label>
+                                    <input
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="w-full p-3 border rounded-lg text-center tracking-widest"
+                                        placeholder="****"
+                                        maxLength="4"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">אימות סיסמה</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full p-3 border rounded-lg text-center tracking-widest"
+                                        placeholder="****"
+                                        maxLength="4"
+                                    />
+                                </div>
+                                
+                                {error && <p className="text-red-500 text-center text-sm">{error}</p>}
+                                
+                                <button
+                                    onClick={handleRegister}
+                                    className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-colors"
+                                >
+                                    התחל להשתמש
+                                </button>
+                            </div>
+                            
+                            <div className="mt-6 pt-4 border-t">
+                                <div className="text-center mb-3">
+                                    <p className="text-xs text-gray-500 mb-2">
+                                        💾 הנתונים נשמרים מקומית על המכשיר הזה
+                                    </p>
+                                    <p className="text-xs text-blue-600 mb-2">
+                                        📱 ניתן להוסיף למסך הבית לגישה מהירה
+                                    </p>
+                                </div>
+                                {localStorage.getItem('kidsMoneyApp') && (
+                                    <button
+                                        onClick={handleResetApp}
+                                        className="w-full bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors text-sm"
+                                    >
+                                        איפוס אפליקציה
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Add Goal Form
+            const AddGoalForm = () => {
+                const [newGoal, setNewGoal] = useState({ name: '', targetAmount: '', description: '' });
+                const [error, setError] = useState('');
+
+                const handleSubmit = () => {
+                    setError('');
+                    
+                    if (!newGoal.name.trim() || !newGoal.targetAmount) {
+                        setError('יש למלא שם המטרה וסכום יעד');
+                        return;
+                    }
+                    
+                    if (parseFloat(newGoal.targetAmount) <= 0) {
+                        setError('סכום היעד חייב להיות חיובי');
+                        return;
+                    }
+
+                    const goal = {
+                        id: Date.now(),
+                        kidId: selectedKid.id,
+                        name: newGoal.name.trim(),
+                        targetAmount: parseFloat(newGoal.targetAmount),
+                        savedAmount: 0,
+                        description: newGoal.description.trim(),
+                        createdDate: new Date().toISOString(),
+                        completed: false
+                    };
+
+                    setSavingsGoals([...savingsGoals, goal]);
+                    setNewGoal({ name: '', targetAmount: '', description: '' });
+                    setShowAddGoal(false);
+                    setError('');
+                };
+
+                return (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">שם המטרה</label>
+                            <input
+                                type="text"
+                                value={newGoal.name}
+                                onChange={(e) => setNewGoal({...newGoal, name: e.target.value})}
+                                className="w-full p-2 border rounded-lg"
+                                placeholder="למה אתה חוסך? (צעצוע, משחק...)"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">סכום יעד (₪)</label>
+                            <input
+                                type="number"
+                                value={newGoal.targetAmount}
+                                onChange={(e) => setNewGoal({...newGoal, targetAmount: e.target.value})}
+                                className="w-full p-2 border rounded-lg"
+                                placeholder="כמה כסף אתה צריך?"
+                                min="1"
+                                step="1"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">תיאור (אופציונלי)</label>
+                            <textarea
+                                value={newGoal.description}
+                                onChange={(e) => setNewGoal({...newGoal, description: e.target.value})}
+                                className="w-full p-2 border rounded-lg h-16"
+                                placeholder="למה המטרה הזו חשובה לך?"
+                            />
+                        </div>
+                        {error && <p className="text-red-500 text-center text-sm">{error}</p>}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleSubmit}
+                                className="flex-1 bg-green-500 text-white p-2 rounded-lg hover:bg-green-600"
+                                disabled={!newGoal.name.trim() || !newGoal.targetAmount}
+                            >
+                                יצירת מטרה
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowAddGoal(false);
+                                    setNewGoal({ name: '', targetAmount: '', description: '' });
+                                    setError('');
+                                }}
+                                className="flex-1 bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                            >
+                                ביטול
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Savings Goals Modal
+            const SavingsGoalsModal = () => {
+                const kidGoals = savingsGoals.filter(goal => goal.kidId === selectedKid?.id);
+
+                return (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-2xl font-bold">מטרות חיסכון - {selectedKid?.name}</h2>
+                                <button
+                                    onClick={() => setShowAddGoal(true)}
+                                    className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-1"
+                                >
+                                    <Plus size={14} />
+                                    מטרה חדשה
+                                </button>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto">
+                                {kidGoals.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-500 mb-4">אין מטרות חיסכון עדיין</p>
+                                        <button
+                                            onClick={() => setShowAddGoal(true)}
+                                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                                        >
+                                            צור מטרה ראשונה
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {kidGoals.map(goal => {
+                                            const progress = (goal.savedAmount / goal.targetAmount) * 100;
+                                            const remaining = goal.targetAmount - goal.savedAmount;
+                                            
+                                            return (
+                                                <div key={goal.id} className="bg-gray-50 p-4 rounded-lg">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <h3 className="font-bold text-lg text-gray-800">{goal.name}</h3>
+                                                        {goal.completed && <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">הושגה! 🎉</span>}
+                                                    </div>
+                                                    
+                                                    <div className="mb-3">
+                                                        <div className="flex justify-between text-sm text-gray-600 mb-1">
+                                                            <span>₪{goal.savedAmount} מתוך ₪{goal.targetAmount}</span>
+                                                            <span>{Math.round(progress)}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-3">
+                                                            <div 
+                                                                className={`h-3 rounded-full transition-all ${
+                                                                    goal.completed ? 'bg-green-500' : 'bg-blue-500'
+                                                                }`}
+                                                                style={{ width: `${Math.min(progress, 100)}%` }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {!goal.completed && remaining > 0 && (
+                                                        <p className="text-sm text-gray-600 mb-2">
+                                                            עוד ₪{remaining} כדי להגיע למטרה!
+                                                        </p>
+                                                    )}
+                                                    
+                                                    {goal.description && (
+                                                        <p className="text-sm text-gray-700 mb-3">{goal.description}</p>
+                                                    )}
+                                                    
+                                                    {!goal.completed && (
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    const amount = prompt('כמה כסף תרצה להוסיף למטרה?');
+                                                                    if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
+                                                                        const newSavedAmount = goal.savedAmount + parseFloat(amount);
+                                                                        const isCompleted = newSavedAmount >= goal.targetAmount;
+                                                                        
+                                                                        setSavingsGoals(savingsGoals.map(g => 
+                                                                            g.id === goal.id 
+                                                                                ? { ...g, savedAmount: newSavedAmount, completed: isCompleted }
+                                                                                : g
+                                                                        ));
+                                                                        
+                                                                        if (isCompleted) {
+                                                                            alert('🎉 מזל טוב! הגעת למטרה!');
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                                                            >
+                                                                הוסף כסף
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (window.confirm('האם אתה בטוח שברצונך למחוק את המטרה?')) {
+                                                                        setSavingsGoals(savingsGoals.filter(g => g.id !== goal.id));
+                                                                    }
+                                                                }}
+                                                                className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                                                            >
+                                                                מחק
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <button
+                                onClick={() => {
+                                    setShowSavingsGoals(false);
+                                    setSelectedKid(null);
+                                }}
+                                className="mt-4 w-full bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                            >
+                                סגור
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Add Parent Form
+            const AddParentForm = () => {
+                const [newParent, setNewParent] = useState({ name: '', password: '' });
+                const [error, setError] = useState('');
+
+                const handleSubmit = () => {
+                    setError('');
+                    
+                    if (!newParent.name.trim() || !newParent.password) {
+                        setError('יש למלא את כל השדות');
+                        return;
+                    }
+                    
+                    if (newParent.password.length !== 4) {
+                        setError('הסיסמה חייבת להיות בת 4 ספרות');
+                        return;
+                    }
+
+                    const parent = {
+                        id: Date.now(),
+                        name: newParent.name.trim(),
+                        type: 'parent',
+                        password: newParent.password
+                    };
+
+                    setUsers([...users, parent]);
+                    setNewParent({ name: '', password: '' });
+                    setShowAddParent(false);
+                    setError('');
+                };
+
+                return (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">שם ההורה</label>
+                            <input
+                                type="text"
+                                value={newParent.name}
+                                onChange={(e) => setNewParent({...newParent, name: e.target.value})}
+                                className="w-full p-2 border rounded-lg"
+                                placeholder="הזן שם ההורה"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">סיסמה (4 ספרות)</label>
+                            <input
+                                type="password"
+                                value={newParent.password}
+                                onChange={(e) => setNewParent({...newParent, password: e.target.value})}
+                                className="w-full p-2 border rounded-lg text-center tracking-widest"
+                                placeholder="****"
+                                maxLength="4"
+                            />
+                        </div>
+                        {error && <p className="text-red-500 text-center text-sm">{error}</p>}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleSubmit}
+                                className="flex-1 bg-green-500 text-white p-2 rounded-lg hover:bg-green-600"
+                                disabled={!newParent.name.trim() || !newParent.password}
+                            >
+                                הוסף הורה
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowAddParent(false);
+                                    setNewParent({ name: '', password: '' });
+                                    setError('');
+                                }}
+                                className="flex-1 bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                            >
+                                ביטול
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Add Kid Form
+            const AddKidForm = () => {
+                const [newKid, setNewKid] = useState({ name: '', birthDate: '', avatar: '🐶' });
+                const avatars = ['🐶', '🐱', '🐰', '🐸', '🐧', '🦊', '🐨', '🐯'];
+
+                const handleSubmit = () => {
+                    if (newKid.name.trim() && newKid.birthDate) {
+                        const kid = {
+                            id: Date.now(),
+                            name: newKid.name.trim(),
+                            birthDate: newKid.birthDate,
+                            balance: 0,
+                            avatar: newKid.avatar
+                        };
+                        
+                        setKids([...kids, kid]);
+                        setUsers([...users, {
+                            id: Date.now() + 1,
+                            name: newKid.name.trim(),
+                            type: 'child',
+                            kidId: kid.id
+                        }]);
+                        
+                        setNewKid({ name: '', birthDate: '', avatar: '🐶' });
+                        setShowAddKid(false);
+                    }
+                };
+
+                return (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">שם</label>
+                            <input
+                                type="text"
+                                value={newKid.name}
+                                onChange={(e) => setNewKid({...newKid, name: e.target.value})}
+                                className="w-full p-2 border rounded-lg"
+                                placeholder="הזן שם הילד/ה"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">תאריך לידה</label>
+                            <input
+                                type="date"
+                                value={newKid.birthDate}
+                                onChange={(e) => setNewKid({...newKid, birthDate: e.target.value})}
+                                className="w-full p-2 border rounded-lg"
+                            />
+                            {newKid.birthDate && (
+                                <p className="text-sm text-gray-500 mt-1">
+                                    גיל נוכחי: {calculateAge(newKid.birthDate)} שנים
+                                </p>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">אווטר</label>
+                            <div className="flex gap-2 flex-wrap">
+                                {avatars.map(avatar => (
+                                    <button
+                                        key={avatar}
+                                        type="button"
+                                        onClick={() => setNewKid({...newKid, avatar})}
+                                        className={`text-2xl p-2 rounded-lg border-2 ${
+                                            newKid.avatar === avatar ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                                        }`}
+                                    >
+                                        {avatar}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleSubmit}
+                                className="flex-1 bg-green-500 text-white p-2 rounded-lg hover:bg-green-600"
+                                disabled={!newKid.name.trim() || !newKid.birthDate}
+                            >
+                                שמור
+                            </button>
+                            <button
+                                onClick={() => setShowAddKid(false)}
+                                className="flex-1 bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600"
+                            >
+                                ביטול
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Password Prompt
+            const PasswordPrompt = () => {
+                const [password, setPassword] = useState('');
+                const [error, setError] = useState('');
+
+                const handleSubmit = () => {
+                    if (password === selectedParent.password) {
+                        setCurrentUser(selectedParent);
+                        setShowPasswordPrompt(false);
+                        setSelectedParent(null);
+                        setPassword('');
+                        setError('');
+                    } else {
+                        setError('סיסמה שגויה');
+                        setPassword('');
+                    }
+                };
+
+                return (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                            <h2 className="text-2xl font-bold mb-4 text-center">הזן סיסמה</h2>
+                            <p className="text-center mb-4 text-gray-600">{selectedParent?.name}</p>
+                            <div className="space-y-4">
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        setError('');
+                                    }}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                                    className="w-full p-3 border rounded-lg text-center text-2xl tracking-widest"
+                                    placeholder="****"
+                                    maxLength="4"
+                                    autoFocus
+                                />
+                                {error && <p className="text-red-500 text-center text-sm">{error}</p>}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleSubmit}
+                                        className="flex-1 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600"
