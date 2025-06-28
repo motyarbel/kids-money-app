@@ -1,0 +1,29 @@
+{
+  "name": "כסף הילדים",
+  "short_name": "כסף הילדים",
+  "description": "אפליקציה לניהול כסף ילדים במשפחה",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#3B82F6",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait",
+  "lang": "he",
+  "dir": "rtl",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Ccircle cx='96' cy='96' r='90' fill='%233B82F6'/%3E%3Ctext x='96' y='75' font-size='40' text-anchor='middle' fill='white' font-family='Arial'%3E💰%3C/text%3E%3Ctext x='96' y='105' font-size='18' text-anchor='middle' fill='white' font-family='Arial'%3Eכסף%3C/text%3E%3Ctext x='96' y='125' font-size='18' text-anchor='middle' fill='white' font-family='Arial'%3Eהילדים%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Ccircle cx='256' cy='256' r='240' fill='%233B82F6'/%3E%3Ctext x='256' y='200' font-size='100' text-anchor='middle' fill='white' font-family='Arial'%3E💰%3C/text%3E%3Ctext x='256' y='280' font-size='48' text-anchor='middle' fill='white' font-family='Arial'%3Eכסף%3C/text%3E%3Ctext x='256' y='330' font-size='48' text-anchor='middle' fill='white' font-family='Arial'%3Eהילדים%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "family", "lifestyle"],
+  "prefer_related_applications": false
+}
